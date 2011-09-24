@@ -978,6 +978,7 @@ Proof.
     simpl.  rewrite IHn'.  reflexivity.  Qed.
 
 
+(**
 Theorem remove_decreases_count: forall (s : bag),
   ble_nat (count 0 (remove_one 0 s)) (count 0 s) = true.
 Proof.
@@ -989,6 +990,7 @@ Proof.
     destruct n as [| n'].
     reflexivity.
 Qed.
+**)
 
 (** [] *)
 
@@ -1013,18 +1015,21 @@ There is a hard way and an easy way to solve this exercise.
 SearchAbout snoc.
 SearchAbout rev.
 
+Theorem rev_injective_back: forall (l1 l2 : natlist),
+   l1 = l2 -> rev l1 = rev l2.
+Proof. Admitted.
+
 Theorem rev_injective: forall (l1 l2 : natlist),
   rev l1 = rev l2 -> l1 = l2.
 Proof.
-  intros l1 l2 H. 
-  induction l1 as [| n l1'].
-  Case "l1 = nil".
-    destruct l2 as [| n l2'].
-    SCase "l2 = nil".
-      reflexivity.
-    SCase "l2 = cons".
-      simpl in H.
-
+  intros l1 l2 H.
+  assert (rr: rev (rev l1) = rev (rev l2)).
+    rewrite H.
+    reflexivity.
+  rewrite rev_involutive in rr.
+  rewrite rev_involutive in rr.
+  apply rr.
+Qed.
 
 (* FILL IN HERE *)
 (** [] *)
@@ -1108,16 +1113,19 @@ Definition option_elim (o : natoption) (d : nat) : nat :=
    have to pass a default element for the [nil] case.  *)
 
 Definition hd_opt (l : natlist) : natoption :=
-  (* FILL IN HERE *) admit.
+  match l with
+  | nil => None
+  | x :: xs => Some x
+  end.
 
 Example test_hd_opt1 : hd_opt [] = None.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example test_hd_opt2 : hd_opt [1] = Some 1.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example test_hd_opt3 : hd_opt [5,6] = Some 5.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (option_elim_hd) *)
@@ -1126,7 +1134,13 @@ Example test_hd_opt3 : hd_opt [5,6] = Some 5.
 Theorem option_elim_hd : forall (l:natlist) (default:nat),
   hd default l = option_elim (hd_opt l) default.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l n.
+  destruct l as [|n' l'].
+  Case "l = nil".
+    reflexivity.
+  Case "l = cons".
+    reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, recommended (beq_natlist) *)
@@ -1135,19 +1149,37 @@ Proof.
     yields [true] for every list [l]. *)
 
 Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
-  (* FILL IN HERE *) admit.
+  match l1, l2 with 
+  | nil, nil => true
+  | nil, _ => false
+  | _, nil => false
+  | x :: xs, y :: ys => if beq_nat x y  then beq_natlist xs ys else false
+  end.
 
 Example test_beq_natlist1 :   (beq_natlist nil nil = true).
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_beq_natlist2 :   beq_natlist [1,2,3] [1,2,3] = true.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_beq_natlist3 :   beq_natlist [1,2,3] [1,2,4] = false.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Theorem beq_natlist_refl : forall l:natlist,
   true = beq_natlist l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l as [| n l'].
+  reflexivity.
+  destruct n as [|n'].
+  simpl.
+  apply IHl'.
+  simpl.
+  assert(H: beq_nat n' n' = true).
+  rewrite <- beq_nat_refl.
+  reflexivity.
+  rewrite -> H.
+  apply IHl'.
+Qed.
+   
+
 (** [] *)
 
 (* ###################################################### *)
@@ -1213,8 +1245,10 @@ Theorem silly_ex :
      evenb 3 = true ->
      oddb 4 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros H H3.
+  apply H.  apply H3.
+Qed.
+
 
 (** To use the [apply] tactic, the (conclusion of the) fact
     being applied must match the goal _exactly_ -- for example, [apply]
@@ -1243,18 +1277,18 @@ Proof.
             [apply] will do a [simpl] step first. *)  
   apply H.  Qed.         
 
+SearchAbout rev.
 
 (** **** Exercise: 3 stars, recommended (apply_exercise1) *)
 Theorem rev_exercise1 : forall (l l' : natlist),
      l = rev l' ->
      l' = rev l.
 Proof.
-  (* Hint: you can use [apply] with previously defined lemmas, not
-     just hypotheses in the context.  Remember that [SearchAbout] is
-     your friend. *)
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
+ intros l l' H.
+ rewrite -> H.
+ symmetry.
+ apply rev_involutive. 
+Qed.
 
 (** **** Exercise: 1 star (apply_rewrite) *)
 (** Briefly explain the difference between the tactics [apply] and
@@ -1262,6 +1296,9 @@ Proof.
     applied?
 
   (* FILL IN HERE *)
+
+We should try to explain this in class, because I don't completely understand just yet.
+
 *)
 (** [] *)
 
@@ -1303,11 +1340,20 @@ Proof.
     general induction hypothesis.  Complete the following (leaving the
     first line unchanged). *)
 
+(** TODO...Not sure i should have introd l2 and l3 here... **)
 Theorem app_ass' : forall l1 l2 l3 : natlist, 
   (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).   
 Proof.
   intros l1. induction l1 as [ | n l1'].
-  (* FILL IN HERE *) Admitted.
+  Case "l = nil".
+    reflexivity.
+  Case "l = cons".
+    simpl.
+    intros l2 l3.
+    rewrite -> IHl1'.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (apply_exercise2) *)
@@ -1315,11 +1361,14 @@ Proof.
     This leaves it general, so that the IH doesn't specify a
     particular [m], but lets us pick. *)
 
+(** TODO !!! **)
 Theorem beq_nat_sym : forall (n m : nat),
   beq_nat n m = beq_nat m n.
 Proof.
   intros n. induction n as [| n'].
-  (* FILL IN HERE *) Admitted.
+  Case "n = 0".
+Admitted.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (beq_nat_sym_informal) *)
@@ -1370,15 +1419,26 @@ Fixpoint find (key : nat) (d : dictionary) : option nat :=
 Theorem dictionary_invariant1 : forall (d : dictionary) (k v: nat),
   (find k (insert k v d)) = Some v.
 Proof.
- (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros d k v.
+  destruct d as [| k' v' d'].
+  Case "empty".
+    simpl. rewrite <- beq_nat_refl. reflexivity.
+  Case "non empty".
+    simpl. rewrite <- beq_nat_refl. reflexivity.
+Qed.
 
 (** **** Exercise: 1 star (dictionary_invariant2) *)
 (* Complete the following proof. *)
 Theorem dictionary_invariant2 : forall (d : dictionary) (m n o: nat),
   (beq_nat m n) = false -> (find m d) = (find m (insert n o d)).
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros d m n o ne.
+  destruct d as [| k' v' d'].
+  Case "empty".
+    simpl. rewrite ne. reflexivity.
+  Case "non empty".
+    simpl. rewrite ne. reflexivity.
+Qed.
 (** [] *)
 
 End Dictionary.
