@@ -1565,6 +1565,27 @@ Proof.
         converting it to unary and then incrementing.  
 *)
 
+Inductive nat : Type :=
+  | Mt : nat
+  | B20 : nat -> nat
+  | B21 : nat -> nat.
+
+Fixpoint double (b:bin) :=
+  match b with
+  | Mt => B21 Mt
+  | B20 b' => B21 b'
+  | B21 b' => B20 (inc b')
+  end.
+
+Fixpoint bintonat (b:bin) : nat :=
+  match b with
+  | Mt => O
+  | B20 b' => double (bintonat b')
+  | B20 b' => S (double (bintonat b'))
+  end.
+
+
+
 (* FILL IN HERE *)
 (** [] *)
 

@@ -1015,10 +1015,6 @@ There is a hard way and an easy way to solve this exercise.
 SearchAbout snoc.
 SearchAbout rev.
 
-Theorem rev_injective_back: forall (l1 l2 : natlist),
-   l1 = l2 -> rev l1 = rev l2.
-Proof. Admitted.
-
 Theorem rev_injective: forall (l1 l2 : natlist),
   rev l1 = rev l2 -> l1 = l2.
 Proof.
