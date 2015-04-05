@@ -1311,7 +1311,17 @@ Proof. intros n m l neq mem. induction l.
       fold member in mem. unfold member. rewrite neq. fold member. apply mem.
 Qed.
 
-     
+
+Theorem beq_nat_comm: forall n m, beq_nat n m = beq_nat m n.
+Proof. intros n.
+ induction n. 
+ Case "n=0".
+   destruct m.
+   SCase "m=0". reflexivity.
+   SCase "m>0". 
+Admitted.
+
+(* this uses add, because add=cons and remove_one uses cons. *)
 Theorem something_with_count_and_add : forall (n: nat) (s : bag),
   member n s = true ->
   count n s = count n (n :: remove_one n s).
@@ -1322,22 +1332,20 @@ Proof.
     destruct n. 
       SCase "n = 0".
         destruct n0.
-        SSCase "n0 = 0".
-          simpl. reflexivity.
-        SSCase "n0 = S _". simpl.
-          assert (H2: forall (m: nat), member 0 (S m :: s) = true -> member 0 s = true).
-            destruct m. 
-            rewrite <- member_in_tail_helper2. 
-            rewrite <- member_in_tail_helper2 in H.
-            rewrite H.
-            reflexivity.
-            rewrite <- member_in_tail_helper2.
-            rewrite <- member_in_tail_helper2 in H.
-            rewrite H.
-            reflexivity.            
- Admitted.
-
-
+        SSCase "n0 = 0". simpl. reflexivity.
+        SSCase "n0 = S _". simpl. simpl in IHs. apply IHs. simpl in H. apply H.
+      SCase "n > 0".
+        destruct n0.
+        SSCase "n0 = 0".   simpl. simpl in IHs. simpl in H. rewrite H in IHs. rewrite <- beq_nat_refl in IHs. apply IHs. reflexivity.
+        SSCase "n0 = S _". simpl. simpl in H.
+          destruct (beq_nat n n0) eqn:H2.
+          SSSCase "true".  rewrite beq_nat_comm in H2. rewrite H2. reflexivity.
+          SSSCase "false".
+            rewrite beq_nat_comm in H2. rewrite H2. simpl.
+            rewrite H2. simpl in IHs. rewrite <- beq_nat_refl in IHs.
+            apply IHs. apply H.
+Qed.       
+          
 
 End NatList.
 
