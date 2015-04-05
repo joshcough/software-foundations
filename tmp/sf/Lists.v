@@ -384,7 +384,11 @@ Example test_add1:                count 1 (add 1 [1;4;1]) = 3.
 Example test_add2:                count 5 (add 1 [1;4;1]) = 0.
  reflexivity. Qed.
 
-Definition member (v:nat) (s:bag) : bool := negb (beq_nat 0 (count v s)).
+Fixpoint member (v:nat) (s:bag) : bool :=
+  match s with
+    | [] => false
+    | h::t => if beq_nat v h then true else member v t
+  end.                                            
 
 Example test_member1:             member 1 [1;4;1] = true.
  reflexivity. Qed.
@@ -433,175 +437,6 @@ Example test_subset1:              subset [1;2] [2;1;4;1] = true.
  reflexivity. Qed.
 Example test_subset2:              subset [1;2;2] [2;1;4;1] = false.
  reflexivity. Qed.
-
-(** **** Exercise: 3 stars (bag_theorem)  *)
-(** Write down an interesting theorem [bag_theorem] about bags involving
-    the functions [count] and [add], and prove it.  Note that, since this
-    problem is somewhat open-ended, it's possible that you may come up
-    with a theorem which is true, but whose proof requires techniques
-    you haven't learned yet.  Feel free to ask for help if you get
-    stuck! *)
-
-Definition bgt_nat (n m : nat) : bool := negb (ble_nat n m).
-
-Theorem filter_nil_is_nil : forall (f:nat->bool),
-  filter f [] = [].
-Proof.
-  intros.
-  unfold filter. simpl.
-  reflexivity.
-Qed.
-
-Theorem count_n_nil_false : forall (n: nat),
-  count n [] = 0.
-Proof.
-  intros. unfold count. reflexivity.
-Qed.
-
-Theorem member_n_nil_false : forall (n: nat),
-  member n [] = false.
-Proof.
-  intros.
-  unfold member. rewrite count_n_nil_false. simpl. reflexivity.
-Qed.
-
-Theorem obvious_member : forall (n: nat) (s: bag),
-  member n (n :: s) = true.
-Proof.
-  intros.
-  unfold member. simpl. rewrite <- beq_nat_refl.  reflexivity. 
-Qed.
-
-Theorem bgt_nat_0_Sn_false : forall (n: nat),
-  bgt_nat 0 (S n) = false.
-Proof.
-  intros. induction n.
-  Case "0". reflexivity.
-  Case "S n". unfold bgt_nat. simpl. reflexivity.
-Qed.
-
-Theorem bgt_nat_Sn_0_true : forall (n: nat),
-  bgt_nat (S n) 0 = true.
-Proof.
-  intros. induction n.
-  Case "0". reflexivity.
-  Case "S n". unfold bgt_nat. simpl. reflexivity.
-Qed.
- 
-Theorem member_implies_positive_length : forall (n: nat) (s : bag),
-  member n s = true -> bgt_nat (length s) 0 = true.
-Proof.
-  intros. induction s.
-  Case "[]". rewrite member_n_nil_false in H. inversion H.
-  Case "h::t". simpl. rewrite bgt_nat_Sn_0_true. reflexivity.
-Qed.
-
-Theorem andb_b_and_true: forall (b: bool), 
-  andb b true = b.
-Proof.
-  intros.
-  destruct b. reflexivity. reflexivity.
-Qed.
-
-Theorem count_helper : forall (n: nat) (s: bag),
-  count 0 (S n :: s) = count 0 s.
-Proof.
-  intros. simpl. reflexivity. 
-Qed.
-
-Theorem count_helper2 : forall (n: nat) (s: bag),
-  count (S n) (0 :: s) = count (S n) s.
-Proof.
-  intros. simpl. reflexivity. 
-Qed.
-
-Theorem member_in_tail_helper1 : forall (n: nat) (s : bag),
-  member 0 s = true -> member 0 (S n :: s) = true.
-Proof.
-  intros n s H.
-  unfold member. unfold member in H. rewrite count_helper. apply H.
-Qed.
-
-Theorem member_in_tail_helper2 : forall (n: nat) (s : bag),
-  member 0 s = member 0 (S n :: s).
-Proof.
-  intros n s.
-  unfold member. rewrite count_helper. reflexivity.
-Qed.
-
-Theorem member_in_tail_helper3 : forall (n: nat) (s : bag),
-  member (S n) s = member (S n) (0 :: s).
-Proof.
-  intros n s.
-  unfold member. rewrite count_helper2. reflexivity.
-Qed.
-
-Theorem andb_left: forall (b1 b2: bool),
-  andb b1 b2 = true -> b1 = true.
-Proof.
-  intros. destruct b1. reflexivity. simpl in H. inversion H.
-Qed.
-
-Theorem andb_false_r: forall (b: bool),
-  andb b false = false.
-Proof.
-  intros. destruct b. reflexivity. reflexivity.
-Qed.
-
-Theorem andb_right: forall (b1 b2: bool),
-  andb b1 b2 = true -> b2 = true.
-Proof.
-  intros. destruct b2. reflexivity.  rewrite andb_false_r in H. inversion H.
-Qed.
-
-
-Theorem member_in_tail : forall (n m : nat) (s : bag),
-  andb (member n (m :: s)) (negb (beq_nat n m)) = true -> member n s = true.
-Proof.
-  intros. induction n.
-    Case "0".
-      destruct m.
-        SCase "0".
-          rewrite <- beq_nat_refl in H. simpl in H. inversion H.
-        SCase "S _". simpl in H.
-          assert (H2: member 0 (S m :: s) = true).
-            rewrite andb_b_and_true in H. apply H.
-          assert (H3: member 0 (S m :: s) = member 0 s). rewrite H2.
-            unfold member. unfold member in H2. rewrite count_helper in H2. rewrite H2. reflexivity.
-          rewrite <- member_in_tail_helper2 with (n:=m) in H2.
-          apply H2.          
-    Case "S n'".
-      destruct m. 
-        SCase "=0". rewrite <- member_in_tail_helper3 in H. simpl in H. rewrite andb_b_and_true in H. apply H.
-        SCase ">0". simpl in H. rewrite andb_right with (b1 := member (S n) (S m :: s)) (b2 := negb (beq_nat n m)) in H.
-         rewrite andb_b_and_true in H.
-Admitted.
-
- 
-Theorem something_with_count_and_add : forall (n: nat) (s : bag),
-  member n s = true ->
-  count n s = count n (n :: remove_one n s).
-Proof.
-  intros n s H. induction s.
-  Case "[]". rewrite member_n_nil_false in H. inversion H.
-  Case "h::t". simpl. rewrite <- beq_nat_refl.
-    destruct n. 
-      SCase "n = 0".
-        destruct n0.
-        SSCase "n0 = 0".
-          simpl. reflexivity.
-        SSCase "n0 = S _". simpl.
-          assert (H2: forall (m: nat), member 0 (S m :: s) = true -> member 0 s = true).
-            destruct m. 
-            rewrite <- member_in_tail_helper2. 
-            rewrite <- member_in_tail_helper2 in H.
-            rewrite H.
-            reflexivity.
-            rewrite <- member_in_tail_helper2.
-            rewrite <- member_in_tail_helper2 in H.
-            rewrite H.
-            reflexivity.            
- Admitted.
 
 
 (* ###################################################### *)
@@ -1309,6 +1144,200 @@ Proof.
 Qed.
 
 End Dictionary.
+
+
+(** **** Exercise: 3 stars (bag_theorem)  *)
+(** Write down an interesting theorem [bag_theorem] about bags involving
+    the functions [count] and [add], and prove it.  Note that, since this
+    problem is somewhat open-ended, it's possible that you may come up
+    with a theorem which is true, but whose proof requires techniques
+    you haven't learned yet.  Feel free to ask for help if you get
+    stuck! *)
+
+Definition bneq_nat (n m : nat) : bool := negb (beq_nat n m).
+
+Definition bgt_nat (n m : nat) : bool := negb (ble_nat n m).
+
+Theorem filter_nil_is_nil : forall (f:nat->bool),
+  filter f [] = [].
+Proof.
+  intros.
+  unfold filter. simpl.
+  reflexivity.
+Qed.
+
+Theorem count_n_nil_false : forall (n: nat),
+  count n [] = 0.
+Proof.
+  intros. unfold count. reflexivity.
+Qed.
+
+Theorem member_n_nil_false : forall (n: nat),
+  member n [] = false.
+Proof.
+  intros. reflexivity.
+Qed.
+
+Theorem member_0_Sn_false : forall n, member 0 [S n] = false.
+Proof. intros. destruct n.
+  unfold member. simpl. reflexivity.
+  unfold member. simpl. reflexivity.
+Qed.
+  
+Theorem member_n_in_m_false : forall (n m: nat),
+  beq_nat n m = false -> member n [m] = false.
+Proof.
+  intros n. induction n. 
+  Case "n=0".
+    destruct m.
+    intros H. inversion H.
+    intros H. unfold member. simpl. reflexivity.
+  Case "n>0".
+    destruct m.
+    intros H. unfold member. simpl. reflexivity.
+    intros H. apply IHn. inversion H. reflexivity.
+Qed.
+    
+Theorem obvious_member : forall (n: nat) (s: bag),
+  member n (n :: s) = true.
+Proof.
+  intros.
+  unfold member. simpl. rewrite <- beq_nat_refl.  reflexivity. 
+Qed.
+
+
+Theorem bgt_nat_0_Sn_false : forall (n: nat),
+  bgt_nat 0 (S n) = false.
+Proof.
+  intros. induction n.
+  Case "0". reflexivity.
+  Case "S n". unfold bgt_nat. simpl. reflexivity.
+Qed.
+
+Theorem bgt_nat_Sn_0_true : forall (n: nat),
+  bgt_nat (S n) 0 = true.
+Proof.
+  intros. induction n.
+  Case "0". reflexivity.
+  Case "S n". unfold bgt_nat. simpl. reflexivity.
+Qed.
+ 
+Theorem member_implies_positive_length : forall (n: nat) (s : bag),
+  member n s = true -> bgt_nat (length s) 0 = true.
+Proof.
+  intros. induction s.
+  Case "[]". rewrite member_n_nil_false in H. inversion H.
+  Case "h::t". simpl. rewrite bgt_nat_Sn_0_true. reflexivity.
+Qed.
+
+Theorem member_0_is_not_head : forall (n: nat) (s : bag),
+  member 0 s = true -> member 0 (S n :: s) = true.
+Proof.
+  intros n s H. simpl. apply H.
+Qed.
+
+Theorem member_0_is_not_head' : forall (n: nat) (s : bag),
+  member 0 s = member 0 (S n :: s).
+Proof.
+  intros n s. simpl. reflexivity.
+Qed.
+
+Theorem member_Sn_is_not_head' : forall (n: nat) (s : bag),
+  member (S n) s = member (S n) (0 :: s).
+Proof.
+  intros n s. simpl. reflexivity.
+Qed.
+
+Theorem flip_bool : forall b, b = true -> negb b = false.
+Proof. intros. destruct b. reflexivity. inversion H. Qed.
+
+Theorem member_in_tail_helper: forall n m,
+  member n [m] = true -> negb (beq_nat n m) = true -> true = false.
+Proof.
+  induction m.
+  Case "m=0".
+    intros H1 H2. destruct n. inversion H2. inversion H1.
+  Case "m>0".
+  intros H1 H2. (*apply IHm.*)
+Admitted.  
+
+Theorem kill_if : forall b : bool, (if b then true else false) = b.
+Proof. intros. destruct b. reflexivity. reflexivity. Qed.
+
+Theorem member_in_singleton : forall n m,
+  member n [m] = true -> beq_nat n m = true.
+Proof.
+  induction m.
+  simpl. destruct n. simpl. reflexivity. simpl. intros. inversion H.
+  simpl. destruct n. simpl. intros. inversion H. simpl. intros.
+  rewrite kill_if in H. apply H.
+Qed.
+
+Theorem b_and_neg_b: forall b, andb b (negb b) = false.
+Proof. intros. destruct b. reflexivity. reflexivity.
+Qed.
+
+Theorem negb_and_b: forall b, andb (negb b) b = false.
+Proof. intros. destruct b. reflexivity. reflexivity.
+Qed.
+
+Theorem beq_nat_add_S: forall n m, beq_nat n m = true -> beq_nat (S n) (S m) = true.
+Proof. intros. simpl. apply H. Qed.
+
+Theorem member_strip_S : forall n m, member (S n) [S m] = member n [m].
+Proof. intros.
+  destruct n. destruct m. reflexivity. reflexivity. reflexivity.
+Qed.       
+  
+Theorem if_branches_both_true: forall b : bool, (if b then true else true) = true.
+Proof. destruct b. reflexivity. reflexivity. Qed.
+
+Theorem member_in_tail : forall (n m : nat) (l : bag),
+  beq_nat n m        = false -> 
+  member n (m :: l)  = true ->
+  member n l         = true.
+Proof. intros n m l neq mem. induction l.
+  Case "[]".
+   destruct n. destruct m.
+   inversion neq.
+   inversion mem.
+   apply member_in_singleton in mem. rewrite neq in mem. inversion mem.   
+  Case "cons".
+    destruct (beq_nat n n0) eqn:H.
+    SCase "true".  unfold member. rewrite H. reflexivity.
+    SCase "false".
+      unfold member. rewrite H. fold member. apply IHl.
+      unfold member in mem. rewrite neq in mem. rewrite H in mem.
+      fold member in mem. unfold member. rewrite neq. fold member. apply mem.
+Qed.
+
+     
+Theorem something_with_count_and_add : forall (n: nat) (s : bag),
+  member n s = true ->
+  count n s = count n (n :: remove_one n s).
+Proof.
+  intros n s H. induction s.
+  Case "[]". rewrite member_n_nil_false in H. inversion H.
+  Case "h::t". simpl. rewrite <- beq_nat_refl.
+    destruct n. 
+      SCase "n = 0".
+        destruct n0.
+        SSCase "n0 = 0".
+          simpl. reflexivity.
+        SSCase "n0 = S _". simpl.
+          assert (H2: forall (m: nat), member 0 (S m :: s) = true -> member 0 s = true).
+            destruct m. 
+            rewrite <- member_in_tail_helper2. 
+            rewrite <- member_in_tail_helper2 in H.
+            rewrite H.
+            reflexivity.
+            rewrite <- member_in_tail_helper2.
+            rewrite <- member_in_tail_helper2 in H.
+            rewrite H.
+            reflexivity.            
+ Admitted.
+
+
 
 End NatList.
 
