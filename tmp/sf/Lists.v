@@ -915,66 +915,101 @@ There is a hard way and an easy way to solve this exercise.
 Theorem nil_rev : [] = rev [].
 Proof. intros. simpl. reflexivity. Qed.
 
-SearchAbout rev.
+Theorem f_equal : forall (A B : Type) (f: A -> B) (x y: A),
+    x = y -> f x = f y.
+Proof. intros A B f x y eq. rewrite eq.  reflexivity.  Qed.
 
-(*
-distr_rev: forall l1 l2 : natlist, rev (l1 ++ l2) = rev l2 ++ rev l1
-rev_involutive: forall l : natlist, rev (rev l) = l
-rev_involutive': forall (n : nat) (l : natlist), rev (snoc l n) = n :: rev l
-rev_length: forall l : natlist, length (rev l) = length l
-test_rev2: rev [] = []
-test_rev1: rev [1; 2; 3] = [3; 2; 1]
-*)
 
+Theorem snoc_not_nil: forall l n, [] = snoc l n -> false = true.
+Proof. intros.
+  destruct l. destruct n. inversion H. inversion H. inversion H.
+Qed.
+  
+Theorem snoc_eq: forall l1 l2 n1 n2, snoc l1 n1 = snoc l2 n2 -> l1 = l2.
+Proof. induction l1.
+ Case "l1=[]".
+   destruct l2.
+     SCase "l2=[]". intros. reflexivity.
+     SCase "l2=cons". intros. simpl in H. inversion H. apply snoc_not_nil in H2. inversion H2.
+ Case "l2=cons".
+   destruct l2.
+     SCase "l2=[]". intros. simpl in H. inversion H. symmetry in H2. apply snoc_not_nil in H2. inversion H2.
+     SCase "l2=cons". intros. simpl in H. inversion H. apply IHl1 in H2. rewrite H2. reflexivity.
+Qed.      
+
+Theorem snoc_eq': forall l1 n1 n2, snoc l1 n1 = snoc l1 n2 -> n1 = n2.
+Proof. intros. induction l1.
+ Case "l1=[]". intros. simpl in H. inversion H. reflexivity.
+ Case "l1=cons". simpl in H. inversion H. apply IHl1 in H1. apply H1.
+Qed.   
+   
 Theorem rev_length': forall (l1 l2: natlist),
    rev l1 = rev l2 -> length l1 = length l2.
-Proof. Admitted.
+Proof.
+  intros l1. induction l1.
+  Case "l1=[]".
+    intros l2 rh.
+    destruct l2.
+    SCase "l2=[]". reflexivity.
+    SCase "l2=cons". simpl in rh. apply snoc_not_nil in rh. inversion rh.
+  Case "l1=cons".
+    intros l2 rh.    
+    destruct l2.
+    SCase "l2=[]". simpl in rh.
+      assert (H: forall n l, snoc l n = [] -> true = false).
+        intros. induction l. inversion H. inversion H.
+      apply H in rh. inversion rh.
+    SCase "l2=cons". simpl. apply f_equal. apply IHl1. simpl in rh. apply snoc_eq in rh. apply rh.
+Qed. 
 
-(*
-Theorem zero_is_one: forall n : nat, 0 = S n -> false = true.
-  intros. inversion H.
+Theorem peel_cons: forall n1 n2 l1 l2, n1 :: l1 = n2 :: l2 -> l1 = l2.
+Proof. intros. destruct n1. destruct n2. inversion H. reflexivity. inversion H. inversion H. reflexivity.
 Qed.
 
-Theorem one_is_zero: forall n : nat, S n = 0 -> false = true.
-  intros. inversion H.
-Qed.
-
-
-Theorem x:  forall l: natlist, [] = l -> 0 = length l. 
-  intros.
-  destruct l. reflexivity. inversion H.
-Qed.
-
-Theorem x':  forall l: natlist, 0 = length l -> [] = l. 
-  intros.
-  destruct l. reflexivity. simpl in H. inversion H.
+Theorem l_is_not_Sn_l: forall n l, l = n :: l -> False.
+Proof. intros. induction l. inversion H. inversion H. apply IHl in H2. apply H2.
+Qed.       
+                 
+Theorem Snoc_0_Sn_False: forall l1 l2 n, snoc l1 0 = snoc l2 (S n) -> False.
+Proof.
+  intros l1. induction l1.
+  Case "l1=[]".
+    intros.
+    destruct l2.
+      SCase "l2=[]". inversion H.
+      SCase "l2=cons". simpl in H. apply peel_cons in H. apply snoc_not_nil in H.  inversion H.
+  Case "l1=cons".
+    intros.     
+    simpl in H.
+    destruct l2.
+      SCase "l2=[]". simpl in H. inversion H. symmetry in H2. apply snoc_not_nil in H2. inversion H2.
+      SCase "l2=cons". simpl in H. simpl in IHl1. inversion H. apply IHl1 in H2. apply H2.
 Qed.
 
 Theorem rev_injective: forall (l1 l2 : natlist), 
   rev l1 = rev l2 -> l1 = l2.
-Proof. intros l1 l2 H.
-  induction l1. 
-    Case "[]". apply rev_length' in H. simpl in H. apply x' in H. rewrite H. reflexivity.
-    Case "h::t". 
-*)
-
-(*
-Theorem blah : forall (n: nat) (l: natlist),
-   [] = rev (n :: l) -> false = true.
-Proof.
-  intros.
-    induction l.
-
-
-Theorem rev_nil': forall (l: natlist), 
-  [] = rev l -> [] = l.
-Proof. intros. induction l.
-  reflexivity.
-*)
-    
-
-(* FILL IN HERE *)
-(** [] *)
+Proof. intros l1.
+  induction l1. intros l2 H.   
+    Case "[]". apply rev_length' in H. simpl in H.
+      assert (H2: forall l, 0 = length l -> [] = l).
+        intros. destruct l. reflexivity. simpl in H0. inversion H0.
+      apply H2. apply H.
+    Case "h::t".
+      intros. destruct l2.
+      SCase "l2=[]". simpl in H. symmetry in H. apply snoc_not_nil in H. inversion H.
+      SCase "l2=cons". simpl in H.
+      destruct n.
+      SSCase "n=0".
+        destruct n0.
+        SSSCase "n0=0". apply f_equal. apply IHl1. apply snoc_eq in H. apply H.
+        SSSCase "n0>0". apply Snoc_0_Sn_False in H. inversion H.
+      SSCase "n>0".
+        destruct n0.
+        SSSCase "n0=0". symmetry in H. apply Snoc_0_Sn_False in H. inversion H.
+        SSSCase "n0>0".
+          inversion H. apply snoc_eq in H. rewrite H in H1.
+          apply snoc_eq' in H1. inversion H1. apply f_equal. apply IHl1. apply H.
+Qed.        
 
 
 (* ###################################################### *)
@@ -1205,7 +1240,6 @@ Proof.
   unfold member. simpl. rewrite <- beq_nat_refl.  reflexivity. 
 Qed.
 
-
 Theorem bgt_nat_0_Sn_false : forall (n: nat),
   bgt_nat 0 (S n) = false.
 Proof.
@@ -1221,45 +1255,9 @@ Proof.
   Case "0". reflexivity.
   Case "S n". unfold bgt_nat. simpl. reflexivity.
 Qed.
- 
-Theorem member_implies_positive_length : forall (n: nat) (s : bag),
-  member n s = true -> bgt_nat (length s) 0 = true.
-Proof.
-  intros. induction s.
-  Case "[]". rewrite member_n_nil_false in H. inversion H.
-  Case "h::t". simpl. rewrite bgt_nat_Sn_0_true. reflexivity.
-Qed.
-
-Theorem member_0_is_not_head : forall (n: nat) (s : bag),
-  member 0 s = true -> member 0 (S n :: s) = true.
-Proof.
-  intros n s H. simpl. apply H.
-Qed.
-
-Theorem member_0_is_not_head' : forall (n: nat) (s : bag),
-  member 0 s = member 0 (S n :: s).
-Proof.
-  intros n s. simpl. reflexivity.
-Qed.
-
-Theorem member_Sn_is_not_head' : forall (n: nat) (s : bag),
-  member (S n) s = member (S n) (0 :: s).
-Proof.
-  intros n s. simpl. reflexivity.
-Qed.
 
 Theorem flip_bool : forall b, b = true -> negb b = false.
 Proof. intros. destruct b. reflexivity. inversion H. Qed.
-
-Theorem member_in_tail_helper: forall n m,
-  member n [m] = true -> negb (beq_nat n m) = true -> true = false.
-Proof.
-  induction m.
-  Case "m=0".
-    intros H1 H2. destruct n. inversion H2. inversion H1.
-  Case "m>0".
-  intros H1 H2. (*apply IHm.*)
-Admitted.  
 
 Theorem kill_if : forall b : bool, (if b then true else false) = b.
 Proof. intros. destruct b. reflexivity. reflexivity. Qed.
@@ -1285,8 +1283,7 @@ Theorem beq_nat_add_S: forall n m, beq_nat n m = true -> beq_nat (S n) (S m) = t
 Proof. intros. simpl. apply H. Qed.
 
 Theorem member_strip_S : forall n m, member (S n) [S m] = member n [m].
-Proof. intros.
-  destruct n. destruct m. reflexivity. reflexivity. reflexivity.
+Proof. intros. destruct n. destruct m. reflexivity. reflexivity. reflexivity.
 Qed.       
   
 Theorem if_branches_both_true: forall b : bool, (if b then true else true) = true.
@@ -1311,16 +1308,47 @@ Proof. intros n m l neq mem. induction l.
       fold member in mem. unfold member. rewrite neq. fold member. apply mem.
 Qed.
 
+Theorem imp: false = true -> true = true.
+Proof. intros. reflexivity. Qed.
 
-Theorem beq_nat_comm: forall n m, beq_nat n m = beq_nat m n.
-Proof. intros n.
- induction n. 
- Case "n=0".
-   destruct m.
-   SCase "m=0". reflexivity.
-   SCase "m>0". 
-Admitted.
-
+Theorem beq_nat_comm : forall (n m : nat),
+  beq_nat n m = beq_nat m n.
+Proof.
+  intros n. induction n as [| n'].
+  Case "n = O". simpl. intros m. destruct m as [| m'].
+    SCase "m = O". reflexivity.
+    SCase "m = S m'". reflexivity. 
+  Case "n = S n'". 
+    (* Notice that both the goal and the induction
+       hypothesis have changed: the goal asks us to prove
+       something more general (i.e., to prove the
+       statement for _every_ [m]), but the IH is
+       correspondingly more flexible, allowing us to
+       choose any [m] we like when we apply the IH.  *)
+    intros m.
+    (* Now we choose a particular [m] and introduce the
+       assumption that [double n = double m].  Since we
+       are doing a case analysis on [n], we need a case
+       analysis on [m] to keep the two "in sync." *)
+    destruct m as [| m'].
+    SCase "m = O". 
+      (* The 0 case is trivial *)
+      simpl. reflexivity.
+    SCase "m = S m'".  
+      (* At this point, since we are in the second
+         branch of the [destruct m], the [m'] mentioned
+         in the context at this point is actually the
+         predecessor of the one we started out talking
+         about.  Since we are also in the [S] branch of
+         the induction, this is perfect: if we
+         instantiate the generic [m] in the IH with the
+         [m'] that we are talking about right now (this
+         instantiation is performed automatically by
+         [apply]), then [IHn'] gives us exactly what we
+         need to finish the proof. *)
+    apply IHn'.
+Qed.      
+  
 (* this uses add, because add=cons and remove_one uses cons. *)
 Theorem something_with_count_and_add : forall (n: nat) (s : bag),
   member n s = true ->

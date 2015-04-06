@@ -426,21 +426,22 @@ Proof.
       SCase "m>0". rewrite eq. reflexivity.
 Qed.
 
-(* This black magic proof should be referred back to a lot. *)
+(* This black magic proof should be referred back to a lot. 
+   important to note that intros moves LHS from the goal to the context.
+   somehow I didn't understand that completely, all this time.
+*)
 Theorem plus_n_n_injective : forall n m,
      n + n = m + m ->
      n = m.
 Proof.
   intros n. induction n as [| n'].  
-  (* question: how can we just destruct m, if we haven't introduced it? *)
+  (* question: how can we just destruct m, if we haven't introduced it? 
+   * answer from lolisa on #coq: destruct introduces m, and all variables that come before it. *)
   Case "n=0".
   destruct m.
     SCase "m=0". intro H. reflexivity.
     SCase "m>0". 
-      (* cleverly not introducing the hypothesis until later...
-         also: maybe destruct m also somehow introduces it? i guess it does
-         important to note that intros moves LHS from the goal to the context. 
-       *)
+      (* cleverly not introducing the hypothesis until later. *)
       simpl. intro contra. inversion contra.
   Case "n>0".
   destruct m as [|m'].
@@ -1056,7 +1057,42 @@ Proof.
 Theorem beq_nat_sym : forall (n m : nat),
   beq_nat n m = beq_nat m n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [| n'].
+  Case "n = O". simpl. intros m. destruct m as [| m'].
+    SCase "m = O". reflexivity.
+    SCase "m = S m'". reflexivity. 
+  Case "n = S n'". 
+    (* Notice that both the goal and the induction
+       hypothesis have changed: the goal asks us to prove
+       something more general (i.e., to prove the
+       statement for _every_ [m]), but the IH is
+       correspondingly more flexible, allowing us to
+       choose any [m] we like when we apply the IH.  *)
+    intros m.
+    (* Now we choose a particular [m] and introduce the
+       assumption that [double n = double m].  Since we
+       are doing a case analysis on [n], we need a case
+       analysis on [m] to keep the two "in sync." *)
+    destruct m as [| m'].
+    SCase "m = O". 
+      (* The 0 case is trivial *)
+      simpl. reflexivity.
+    SCase "m = S m'".  
+      apply IHn'.
+      (* At this point, since we are in the second
+         branch of the [destruct m], the [m'] mentioned
+         in the context at this point is actually the
+         predecessor of the one we started out talking
+         about.  Since we are also in the [S] branch of
+         the induction, this is perfect: if we
+         instantiate the generic [m] in the IH with the
+         [m'] that we are talking about right now (this
+         instantiation is performed automatically by
+         [apply]), then [IHn'] gives us exactly what we
+         need to finish the proof. *)
+Qed.    
+
+  
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (beq_nat_sym_informal)  *)
