@@ -756,28 +756,22 @@ Proof.
 
 SearchAbout nil.
 
-Theorem app_nil_end : forall l : natlist, 
-  l ++ [] = l.   
+Theorem app_nil_end : forall l : natlist, l ++ [] = l.   
 Proof.
   intros. induction l. 
   reflexivity. 
   simpl. rewrite IHl. reflexivity.
 Qed.
 
-Theorem rev_involutive' : forall (n: nat) (l : natlist),
-  rev (snoc l n) = n :: (rev l).
-Proof.
-  intros. induction l.
-  reflexivity.
-  simpl. rewrite IHl. simpl. reflexivity.
-Admitted.
-
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
   intros l. induction l as [| n l].
   reflexivity.
-  simpl. rewrite rev_involutive'. rewrite IHl. reflexivity.
+  simpl.
+  assert (H: forall n s, rev (snoc s n) = n :: (rev s)).
+    intros. induction s. reflexivity. simpl. rewrite IHs. simpl. reflexivity.
+  rewrite H. rewrite IHl. reflexivity.
 Qed.
 
 (** There is a short solution to the next exercise.  If you find
@@ -878,10 +872,8 @@ Theorem ble_n_Sn : forall n,
   ble_nat n (S n) = true.
 Proof.
   intros n. induction n as [| n'].
-  Case "0".  
-    simpl.  reflexivity.
-  Case "S n'".
-    simpl.  rewrite IHn'.  reflexivity. 
+  Case "0".    simpl.  reflexivity.
+  Case "S n'". simpl.  rewrite IHn'.  reflexivity. 
 Qed.
 
 Theorem remove_decreases_count: forall (s : bag),
@@ -895,7 +887,6 @@ Proof.
     SCase "n>0". simpl. apply IHs.
 Qed.
   
-
 (** **** Exercise: 3 stars, optional (bag_count_sum)  *)  
 (** Write down an interesting theorem [bag_count_sum] about bags 
     involving the functions [count] and [sum], and prove it.*)
@@ -911,18 +902,15 @@ Qed.
 There is a hard way and an easy way to solve this exercise.
 *)
 
-
 Theorem nil_rev : [] = rev [].
 Proof. intros. simpl. reflexivity. Qed.
 
-Theorem f_equal : forall (A B : Type) (f: A -> B) (x y: A),
-    x = y -> f x = f y.
+Theorem f_equal : forall (A B : Type) (f: A -> B) (x y: A), x = y -> f x = f y.
 Proof. intros A B f x y eq. rewrite eq.  reflexivity.  Qed.
 
 
 Theorem snoc_not_nil: forall l n, [] = snoc l n -> false = true.
-Proof. intros.
-  destruct l. destruct n. inversion H. inversion H. inversion H.
+Proof. intros. destruct l. destruct n. inversion H. inversion H. inversion H.
 Qed.
   
 Theorem snoc_eq: forall l1 l2 n1 n2, snoc l1 n1 = snoc l2 n2 -> l1 = l2.
@@ -1151,9 +1139,7 @@ Definition insert (key value : nat) (d : dictionary) : dictionary :=
 Fixpoint find (key : nat) (d : dictionary) : natoption := 
   match d with 
   | empty         => None
-  | record k v d' => if (beq_nat key k) 
-                       then (Some v) 
-                       else (find key d')
+  | record k v d' => if (beq_nat key k) then (Some v) else (find key d')
   end.
 
 (** **** Exercise: 1 star (dictionary_invariant1)  *)
@@ -1207,11 +1193,8 @@ Proof.
   intros. unfold count. reflexivity.
 Qed.
 
-Theorem member_n_nil_false : forall (n: nat),
-  member n [] = false.
-Proof.
-  intros. reflexivity.
-Qed.
+Theorem member_n_nil_false : forall (n: nat), member n [] = false.
+Proof. intros. reflexivity. Qed.
 
 Theorem member_0_Sn_false : forall n, member 0 [S n] = false.
 Proof. intros. destruct n.
@@ -1233,11 +1216,8 @@ Proof.
     intros H. apply IHn. inversion H. reflexivity.
 Qed.
     
-Theorem obvious_member : forall (n: nat) (s: bag),
-  member n (n :: s) = true.
-Proof.
-  intros.
-  unfold member. simpl. rewrite <- beq_nat_refl.  reflexivity. 
+Theorem obvious_member : forall (n: nat) (s: bag), member n (n :: s) = true.
+Proof. intros. unfold member. simpl. rewrite <- beq_nat_refl.  reflexivity. 
 Qed.
 
 Theorem bgt_nat_0_Sn_false : forall (n: nat),
