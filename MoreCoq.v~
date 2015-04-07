@@ -76,10 +76,8 @@ Theorem silly_ex :
      (forall n, evenb n = true -> oddb (S n) = true) ->
      evenb 3 = true ->
      oddb 4 = true.
-Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
+Proof. intros. apply H. apply H0. Qed.
+       
 (** To use the [apply] tactic, the (conclusion of the) fact
     being applied must match the goal _exactly_ -- for example, [apply]
     will not work if the left and right sides of the equality are
@@ -111,13 +109,35 @@ Proof.
 (** Hint: you can use [apply] with previously defined lemmas, not
     just hypotheses in the context.  Remember that [SearchAbout] is
     your friend. *)
+(*
+SearchAbout rev.
+rev_snoc: forall (X : Type) (v : X) (s : list X), rev (snoc s v) = v :: rev s
+rev_involutive: forall (X : Type) (l : list X), rev (rev l) = l
+map_rev:
+  forall (X Y : Type) (f : X -> Y) (l : list X),
+  map f (rev l) = rev (map f l)
+*)
 
 Theorem rev_exercise1 : forall (l l' : list nat),
      l = rev l' ->
      l' = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros. induction l'.
+  Case "[]". rewrite H. reflexivity.
+  Case "cons". rewrite H. symmetry. apply rev_involutive.
+Qed.
+
+(* Here is an example where picking the wrong induction variable 
+   can make things a little harder. It's not much, but it's still harder. *)
+Theorem rev_exercise1' : forall (l l' : list nat),
+     l = rev l' ->
+     l' = rev l.
+Proof.
+  intros. induction l.
+  Case "[]". rewrite H. symmetry. apply rev_involutive. 
+  Case "cons". rewrite H. symmetry. apply rev_involutive.
+Qed.
+
 
 (** **** Exercise: 1 star, optional (apply_rewrite)  *)
 (** Briefly explain the difference between the tactics [apply] and
@@ -183,8 +203,8 @@ Example trans_eq_exercise : forall (n m o p : nat),
      (n + p) = m ->
      (n + p) = (minustwo o). 
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros. rewrite H0. apply H.
+Qed.
 
 
 (* ###################################################### *)
@@ -269,9 +289,11 @@ Example sillyex1 : forall (X : Type) (x y z : X) (l j : list X),
      y :: l = x :: j ->
      x = y.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  inversion H. inversion H0. apply trans_eq with x. symmetry. apply H2. reflexivity.
+Qed.
 
+  
 Theorem silly6 : forall (n : nat),
      S n = O ->
      2 + 2 = 5.
@@ -290,9 +312,10 @@ Example sillyex2 : forall (X : Type) (x y z : X) (l j : list X),
      y :: l = z :: j ->
      x = z.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
+  intros.
+  inversion H.
+Qed.
+ 
 (** While the injectivity of constructors allows us to reason
     [forall (n m : nat), S n = S m -> n = m], the reverse direction of
     the implication is an instance of a more general fact about
@@ -303,8 +326,6 @@ Theorem f_equal : forall (A B : Type) (f: A -> B) (x y: A),
 Proof. intros A B f x y eq. rewrite eq.  reflexivity.  Qed. 
 
 
-
-
 (** **** Exercise: 2 stars, optional (practice)  *)
 (** A couple more nontrivial but not-too-complicated proofs to work
     together in class, or for you to work as exercises. *)
@@ -313,14 +334,17 @@ Proof. intros A B f x y eq. rewrite eq.  reflexivity.  Qed.
 Theorem beq_nat_0_l : forall n,
    beq_nat 0 n = true -> n = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. destruct n.
+  reflexivity. simpl in H. inversion H.
+Qed.
+  
 Theorem beq_nat_0_r : forall n,
    beq_nat n 0 = true -> n = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
+  intros. destruct n.
+  reflexivity.
+  simpl in H. inversion H.
+Qed.
 
 (* ###################################################### *)
 (** * Using Tactics on Hypotheses *)
@@ -376,6 +400,8 @@ Proof.
 
 (** **** Exercise: 3 stars (plus_n_n_injective)  *)
 (** Practice using "in" variants in this exercise. *)
+
+SearchAbout plus_n_Sm.
 
 Theorem plus_n_n_injective : forall n m,
      n + n = m + m ->
