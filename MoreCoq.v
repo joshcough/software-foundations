@@ -606,7 +606,19 @@ Proof.
 Theorem beq_nat_true : forall n m,
     beq_nat n m = true -> n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+  Case "n=0". intros.
+    destruct m.
+    SCase "m=0". reflexivity.
+    SCase "m>0". inversion H.
+  Case "n>0".
+    intros.
+    destruct m.
+    SCase "m=0". inversion H.
+    SCase "m>0". apply IHn in H. apply eq_remove_S. apply H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (beq_nat_true_informal)  *)
@@ -665,13 +677,13 @@ Proof.
   (* Now [n] is back in the goal and we can do induction on
      [m] and get a sufficiently general IH. *)
   induction m as [| m'].
-  Case "m = O". simpl. intros n eq. destruct n as [| n'].
-    SCase "n = O". reflexivity.
-    SCase "n = S n'". inversion eq.
-  Case "m = S m'". intros n eq. destruct n as [| n'].
-    SCase "n = O". inversion eq.
-    SCase "n = S n'". apply f_equal.
-      apply IHm'. inversion eq. reflexivity. Qed.
+  Case "m=0". simpl. intros n eq. destruct n.
+    SCase "n=0". reflexivity.
+    SCase "n>0". inversion eq.
+  Case "m>0". simpl. intros n eq. destruct n.
+    SCase "n=0". inversion eq.
+    SCase "n>0". apply f_equal. apply IHm'. inversion eq. reflexivity.
+Qed.
 
 (** Let's look at an informal proof of this theorem.  Note that
     the proposition we prove by induction leaves [n] quantified,
@@ -779,7 +791,14 @@ Theorem index_after_last: forall (n : nat) (X : Type) (l : list X),
      length l = n ->
      index n l = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent n. induction l.
+  Case "l=[]". reflexivity.
+  Case "l=cons".  
+    destruct n. simpl.
+      SCase "n=0". intros. inversion H.
+      SCase "n>0". intros. simpl. apply IHl. inversion H. reflexivity.
+Qed.
+      
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (index_after_last_informal)  *)
@@ -802,7 +821,17 @@ Theorem length_snoc''' : forall (n : nat) (X : Type)
      length l = n ->
      length (snoc l v) = S n. 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent n. induction l.
+  Case "l=[]". intros. simpl.
+    destruct n.
+    SCase "n=0". reflexivity.
+    SCase "n>0". inversion H.
+  Case "l=cons".
+    intros. simpl. apply f_equal. simpl in H. destruct n.
+    SCase "n=0". inversion H.
+    SCase "n>0". inversion H. apply IHl. reflexivity.
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (app_length_cons)  *)
@@ -814,17 +843,33 @@ Theorem app_length_cons : forall (X : Type) (l1 l2 : list X)
      length (l1 ++ (x :: l2)) = n ->
      S (length (l1 ++ l2)) = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
+  intros. generalize dependent n. induction l1.
+  Case "l=[]". intros. apply H.
+  Case "l=cons". simpl. intros.
+    destruct n.
+    SCase "n=0". inversion H.
+    SCase "n>0". inversion H. apply f_equal. apply IHl1. reflexivity.
+Qed.
+    
 (** **** Exercise: 4 stars, optional (app_length_twice)  *)
 (** Prove this by induction on [l], without using app_length. *)
 
+(* phew, this was a beast of a proof *)
 Theorem app_length_twice : forall (X:Type) (n:nat) (l:list X),
      length l = n ->
      length (l ++ l) = n + n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent n. induction l.
+  Case "l=[]". intros. destruct n.
+    SCase "n=0". reflexivity.
+    SCase "n>0". inversion H.
+  Case "l=cons". simpl. intros. destruct n.
+    SCase "n=0". inversion H.
+    SCase "n>0". inversion H. apply IHl in H1. inversion H. rewrite <- H2 in H1.
+    simpl. rewrite plus_comm. simpl. apply f_equal.
+    rewrite <- H1. rewrite H2 in H1. symmetry. apply app_length_cons with (x:=x). reflexivity.
+Qed.
+    
 (** [] *)
 
 
