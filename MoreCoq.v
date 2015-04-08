@@ -865,9 +865,20 @@ Proof.
     SCase "n>0". inversion H.
   Case "l=cons". simpl. intros. destruct n.
     SCase "n=0". inversion H.
-    SCase "n>0". inversion H. apply IHl in H1. inversion H. rewrite <- H2 in H1.
-    simpl. rewrite plus_comm. simpl. apply f_equal.
-    rewrite <- H1. rewrite H2 in H1. symmetry. apply app_length_cons with (x:=x). reflexivity.
+    SCase "n>0".
+      inversion H.
+      apply IHl in H1.
+      inversion H.
+      rewrite <- H2 in H1.
+      simpl.
+      rewrite plus_comm.
+      simpl.
+      apply f_equal.
+      rewrite <- H1.
+      rewrite H2 in H1.
+      symmetry.
+      apply app_length_cons with (x:=x).
+      reflexivity.
 Qed.
     
 (** [] *)
@@ -881,9 +892,19 @@ Theorem double_induction: forall (P : nat -> nat -> Prop),
   (forall m, P m 0 -> P (S m) 0) ->
   (forall n, P 0 n -> P 0 (S n)) ->
   (forall m n, P m n -> P (S m) (S n)) ->
-  forall m n, P m n.
+   forall m n, P m n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros p p00 pmSm pnSn pmn m. induction m as [|m'].
+  Case "m=0".
+    induction n.
+    SCase "n=0". apply p00.
+    SCase "n>0". apply pnSn. apply IHn.
+ Case "m = S m'".
+    induction n as [|n'].
+    SCase "n=0". apply pmSm. apply IHm'.
+    SCase "n = S n'". apply pmn. apply IHm'.
+Qed.
+    
 (** [] *)
 
 
